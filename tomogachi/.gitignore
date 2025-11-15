@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+.eggs/
+*.egg
+
+# Environment variables
+.env
+backend/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ESP32 -- For Kaeshav
+
+# Node modules (if you add any)
+node_modules/
+
+# Build files
+dist/
+build/
