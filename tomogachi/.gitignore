@@ -10,6 +10,7 @@ ENV/
 *.egg-info/
 .eggs/
 *.egg
+backend/classifier_test
 
 # Environment variables
 .env

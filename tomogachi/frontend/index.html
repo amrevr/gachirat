@@ -1,0 +1,363 @@
+<!-- CRT Asethetic from https://codepen.io/cgoudouris/pen/VKQBQR -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tomogachi</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .tomogachi-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      transition: all 0.5s ease;
+    }
+    .tomogachi-container.playing {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: 2rem;
+    }
+    .left-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 60%;
+      padding: 2rem;
+    }
+    .tomogachi-container img {
+      max-width: 300px;
+      margin: 2rem 0;
+    }
+    .play-button {
+      background-color: #14fdce;
+      color: #031e11;
+      border: 0.2rem solid #14fdce;
+      padding: 1rem 2rem;
+      font-family: 'VT323';
+      font-size: 1.5rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      margin-top: 1rem;
+    }
+    .play-button:hover {
+      background-color: #031e11;
+      color: #14fdce;
+    }
+    .response-section {
+      display: none;
+      flex-direction: column;
+      width: 40%;
+      padding: 2rem 1rem;
+      gap: 1rem;
+      border-left: 0.2rem solid #14fdce;
+      text-align: left;
+    }
+    .response-section.visible {
+      display: flex;
+    }
+    .interaction-history {
+      max-height: 60vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      text-align: left;
+    }
+    .interaction-item {
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+    .user-input-display {
+      color: #14fdce;
+      margin-bottom: 0.5rem;
+      word-wrap: break-word;
+      text-align: left;
+    }
+    .response-display {
+      color: #14fdce;
+      margin-left: 1rem;
+      word-wrap: break-word;
+      text-align: left;
+    }
+    .user-input-container {
+      margin-top: auto;
+    }
+    .user-input-bar {
+      background-color: rgba(3, 30, 17, 0.5);
+      border: 0.2rem solid #14fdce;
+      color: #14fdce;
+      font-family: 'VT323';
+      font-size: 1.2rem;
+      padding: 1rem;
+      width: 100%;
+      outline: none;
+    }
+    .user-input-bar::placeholder {
+      color: #14fdce;
+      opacity: 0.6;
+    }
+    .initial-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: -40px;
+    }
+    .initial-view.hidden {
+      display: none;
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    .image-upload-container {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 0.2rem dashed #14fdce;
+      background-color: rgba(3, 30, 17, 0.3);
+      text-align: center;
+    }
+    .image-upload-container.visible {
+      display: block;
+    }
+    .upload-label {
+      color: #14fdce;
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      border: 0.2rem solid #14fdce;
+      background-color: rgba(3, 30, 17, 0.5);
+      display: inline-block;
+      font-family: 'VT323';
+      font-size: 1.2rem;
+    }
+    .upload-label:hover {
+      background-color: #14fdce;
+      color: #031e11;
+    }
+    #imageUpload {
+      display: none;
+    }
+  </style>
+</head>
+<body class="noisy">
+  <div class="emblem"><span class="icon-information"></span></div>
+  <div class="frame">
+    <div class="piece output">
+      <div class="tomogachi-container" id="tomoContainer">
+        <div class="initial-view" id="initialView">
+          <h1>Gachirat</h1>
+          <img src="tomo/3-idle.gif" alt="Tomogachi" id="tomoGif">
+          <button class="play-button" id="playButton">Wake Up</button>
+        </div>
+        <div class="left-section" id="leftSection" style="display: none;">
+          <img src="tomo/3-idle.gif" alt="Tomogachi">
+        </div>
+        <div class="response-section" id="responseSection">
+          <div class="interaction-history" id="interactionHistory" style="display: none;">
+            <div class="interaction-item">
+              <div class="user-input-display">&gt; input</div>
+              <div class="response-display">&gt; Response</div>
+            </div>
+            <div class="interaction-item">
+              <div class="user-input-display">&gt; input</div>
+              <div class="response-display">&gt; response</div>
+            </div>
+          </div>
+          <div class="user-input-container">
+            <input type="text" class="user-input-bar" id="userInput" placeholder="> Say something to Gachirat...">
+            <div class="image-upload-container" id="imageUploadContainer">
+              <label for="imageUpload" class="upload-label">📷 Upload Food Image</label>
+              <input type="file" id="imageUpload" accept="image/*">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="piece scanlines noclick"></div>
+    <div class="piece glow noclick"></div>
+  </div>
+  
+  <script>
+    let conversationState = 'initial';  // Track conversation state
+    
+    // Reusable dot animation function
+    function animateDots(element, callback) {
+      let dots = 0;
+      let animating = true;
+      let animationCycleDone = false;
+      let responseData = null;
+      
+      element.textContent = '> .';
+      
+      const dotInterval = setInterval(() => {
+        if (!animating) return;
+        dots = (dots + 1) % 4;
+        element.textContent = '> ' + '.'.repeat(dots || 1);
+        if (dots === 3 && !animationCycleDone) {
+          animationCycleDone = true;
+          checkAndStop();
+        }
+      }, 400);
+      
+      function checkAndStop() {
+        if (animationCycleDone && responseData !== null) {
+          animating = false;
+          clearInterval(dotInterval);
+          callback(responseData);
+        }
+      }
+      
+      return {
+        stop: function(data) {
+          responseData = data;
+          checkAndStop();
+        }
+      };
+    }
+    
+    document.getElementById('playButton').addEventListener('click', function() {
+      const container = document.getElementById('tomoContainer');
+      const initialView = document.getElementById('initialView');
+      const leftSection = document.getElementById('leftSection');
+      const responseSection = document.getElementById('responseSection');
+      const interactionHistory = document.getElementById('interactionHistory');
+      
+      container.classList.add('playing');
+      initialView.classList.add('hidden');
+      leftSection.style.display = 'flex';
+      responseSection.classList.add('visible');
+      // Hide interaction history until user types
+      interactionHistory.style.display = 'none';
+    });
+    
+    // Handle user input
+    document.getElementById('userInput').addEventListener('keypress', async function(e) {
+      if (e.key === 'Enter' && this.value.trim()) {
+        const history = document.getElementById('interactionHistory');
+        history.style.display = 'flex'; // Show on first input
+        // Remove initial demo items if present
+        while (history.firstChild) {
+          history.removeChild(history.firstChild);
+        }
+        const newInteraction = document.createElement('div');
+        newInteraction.className = 'interaction-item';
+        
+        const userInput = document.createElement('div');
+        userInput.className = 'user-input-display';
+        userInput.textContent = '> ' + this.value;
+        
+        const response = document.createElement('div');
+        response.className = 'response-display';
+        
+        // Start dot animation
+        const animation = animateDots(response, (data) => {
+          response.textContent = '> ' + data;
+        });
+        
+        newInteraction.appendChild(userInput);
+        newInteraction.appendChild(response);
+        history.appendChild(newInteraction);
+        
+        const userText = this.value;
+        this.value = '';
+        
+        // Fetch Gemini response
+        (async () => {
+          try {
+            const res = await fetch('/api/gemini', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                input: userText,
+                conversation_state: conversationState 
+              })
+            });
+            const data = await res.json();
+            const geminiResponse = data.response || 'No response';
+            
+            // Update conversation state
+            if (data.conversation_state) {
+              conversationState = data.conversation_state;
+            }
+            
+            // Show upload button only when explicitly requested
+            const uploadContainer = document.getElementById('imageUploadContainer');
+            if (data.show_upload) {
+              uploadContainer.classList.add('visible');
+            }
+            
+            // Hide upload button if user declined
+            if (data.hide_upload) {
+              uploadContainer.classList.remove('visible');
+            }
+            
+            animation.stop(geminiResponse);
+          } catch (err) {
+            animation.stop(" ｢('◉⌓◉')ﾂ  Your question makes my head spin! ");
+          }
+        })();
+        
+        // Auto scroll to bottom
+        history.scrollTop = history.scrollHeight;
+      }
+    });
+    
+    // Handle image upload
+    document.getElementById('imageUpload').addEventListener('change', async function(e) {
+      if (e.target.files && e.target.files[0]) {
+        const history = document.getElementById('interactionHistory');
+        const newInteraction = document.createElement('div');
+        newInteraction.className = 'interaction-item';
+        
+        const userInput = document.createElement('div');
+        userInput.className = 'user-input-display';
+        userInput.textContent = '> I can see it!';
+        
+        const response = document.createElement('div');
+        response.className = 'response-display';
+        
+        // Start dot animation
+        const animation = animateDots(response, (data) => {
+          response.textContent = '> ' + data;
+        });
+        
+        newInteraction.appendChild(userInput);
+        newInteraction.appendChild(response);
+        history.appendChild(newInteraction);
+        
+        // Upload the image
+        const formData = new FormData();
+        formData.append('image', e.target.files[0]);
+        
+        try {
+          const res = await fetch('/api/feed', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+          animation.stop(data.response || 'No response');
+        } catch (err) {
+          animation.stop('Error uploading image');
+        }
+        
+        // Hide upload container and reset
+        const uploadContainer = document.getElementById('imageUploadContainer');
+        uploadContainer.classList.remove('visible');
+        e.target.value = '';
+        
+        // Reset conversation state after image upload
+        conversationState = 'initial';
+        
+        // Auto scroll to bottom
+        history.scrollTop = history.scrollHeight;
+      }
+    });
+  </script>
+</body>
+</html>
