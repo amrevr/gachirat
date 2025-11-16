@@ -7,12 +7,29 @@ import io
 import urllib.request
 import json
 import os
+import google.generativeai as genai
 
 # Load pre-trained ResNet50 model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = models.resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
+model = models.resnet50(weights=None)
+weights_path = os.path.join(os.path.dirname(__file__), 'trained_weights')
+model.load_state_dict(torch.load(weights_path, map_location=device))
 model = model.to(device)
 model.eval()
+
+# Configure Gemini API
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+if GEMINI_API_KEY: genai.configure(api_key=GEMINI_API_KEY)
+
+# Load ImageNet class labels
+try:
+    imagenet_labels_url = "https://raw.githubusercontent.com/anishathalye/imagenet-simple-labels/master/imagenet-simple-labels.json"
+    with urllib.request.urlopen(imagenet_labels_url) as url:
+        imagenet_labels = json.loads(url.read().decode())
+    print(f"[DEBUG] Loaded {len(imagenet_labels)} ImageNet labels")
+except Exception as e:
+    print(f"[DEBUG] Warning: Could not load ImageNet labels: {e}")
+    imagenet_labels = []
 
 # Image preprocessing
 preprocess = transforms.Compose([
@@ -21,15 +38,6 @@ preprocess = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
-
-# Load ImageNet labels
-LABELS_URL = 'https://raw.githubusercontent.com/anishathalye/imagenet-simple-labels/master/imagenet-simple-labels.json'
-try:
-    with urllib.request.urlopen(LABELS_URL) as url:
-        imagenet_labels = json.loads(url.read().decode())
-except Exception as e:
-    print(f"Warning: Could not load ImageNet labels: {e}")
-    imagenet_labels = []
 
 # Nutrition mapping (health score: 1=very unhealthy, 5=very healthy)
 NUTRITION_MAP = {
@@ -83,6 +91,32 @@ def get_nutrition_info(food_name):
     # Default
     return NUTRITION_MAP['unknown']
 
+def classify_food_with_gemini(image_bytes):
+    """Fallback classification using Gemini vision model"""
+    try:
+        print(f"[DEBUG] Using Gemini vision fallback for classification...")
+        
+        # Load image from bytes
+        image = Image.open(io.BytesIO(image_bytes))
+        
+        # Use Gemini vision model
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        prompt = """Identify the main food item in this image. Respond with ONLY the specific food name in lowercase (e.g., 'banana', 'pizza', 'broccoli'). 
+        If multiple foods are present, identify the most prominent one. 
+        If no food is visible, respond with 'unknown'."""
+        
+        response = model.generate_content([prompt, image])
+        food_name = response.text.strip().lower()
+        
+        print(f"[DEBUG] Gemini classified as: {food_name}")
+        return food_name, 0.75  # Assign a reasonable confidence for Gemini results
+        
+    except Exception as e:
+        print(f"[ERROR] Gemini vision classification failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return "unknown food", 0.0
+
 def classify_food(image_file):
     """Classify food image using ResNet50"""
     try:
@@ -112,37 +146,23 @@ def classify_food(image_file):
         
         print(f"[DEBUG] Classified as: {predicted_label} with confidence: {confidence:.2f}")
         
+        # If confidence is too low, use Gemini vision as fallback
+        if confidence < 0.6:
+            print(f"[DEBUG] Confidence {confidence:.2f} < 0.6, trying Gemini vision...")
+            return classify_food_with_gemini(image_bytes)
+        
         return predicted_label, confidence
     except Exception as e:
         print(f"[ERROR] Classification failed: {e}")
         import traceback
         traceback.print_exc()
-        return "unknown food", 0.0
+        # Try Gemini vision as fallback on error
+        try:
+            image_file.seek(0)
+            image_bytes = image_file.read()
+            return classify_food_with_gemini(image_bytes)
+        except:
+            return "unknown food", 0.0
 
 if __name__ == "__main__":
-    # Directory with test images
-    test_dir = "tomogachi/backend/test_images"
-
-    print(f"Model loaded on device: {device}")
-    print(f"ImageNet labels loaded: {len(imagenet_labels)} classes")
-
-    if not os.path.isdir(test_dir):
-        print(f"Test images directory not found: {test_dir}")
-    else:
-        exts = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp'}
-        image_files = sorted([os.path.join(test_dir, f) for f in os.listdir(test_dir)
-                              if os.path.splitext(f)[1].lower() in exts])
-
-        if not image_files:
-            print(f"No image files found in: {test_dir}")
-        else:
-            for img_path in image_files:
-                try:
-                    with open(img_path, "rb") as img_file:
-                        predicted_label, confidence = classify_food(img_file)
-
-                    nutrition = get_nutrition_info(predicted_label)
-                    print(f"{os.path.basename(img_path)} -> {predicted_label} ({confidence*100:.2f}%) "
-                          f"health_score={nutrition['health_score']}, category={nutrition['category']}")
-                except Exception as e:
-                    print(f"Error processing {img_path}: {e}")
+    pass    

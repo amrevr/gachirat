@@ -1,4 +1,19 @@
 services:
+  db:
+    image: postgres:15
+    container_name: tomogachi-db
+    restart: always
+    environment:
+      POSTGRES_DB: gachirat
+      POSTGRES_USER: rijul
+      POSTGRES_PASSWORD: 9123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - tomogachi-network
+
   backend:
     build: ./backend
     container_name: tomogachi-backend
@@ -11,8 +26,11 @@ services:
       - PLAID_CLIENT_ID=${PLAID_CLIENT_ID}
       - PLAID_SECRET=${PLAID_SECRET}
       - PLAID_ENV=${PLAID_ENV}
+      - DATABASE_URL=postgresql://rijul:9123@db:5432/gachirat
     volumes:
       - ./backend:/app
+    depends_on:
+      - db
     restart: unless-stopped
     networks:
       - tomogachi-network
@@ -34,3 +52,6 @@ services:
 networks:
   tomogachi-network:
     driver: bridge
+
+volumes:
+  pgdata:
