@@ -31,8 +31,3 @@ node_modules/
 # Build files
 dist/
 build/
-
-passwords.h
-build/
-cmake-build-debug/
-cmake-build-esp_idf/

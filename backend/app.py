@@ -203,7 +203,7 @@ def gemini_response():
         is_food_query = any(keyword in user_input.lower() for keyword in food_keywords)
         
         # Check if this is a financial advice query
-        finance_keywords = ['money', 'finance', 'financial', 'invest', 'investment', 'stock', 'stocks', 'crypto', 'cryptocurrency', 'bitcoin', 'save', 'savings', 'budget', 'expense', 'debt', 'loan', 'credit', 'bank', 'portfolio', 'retirement', '401k', 'ira', 'dividend', 'etf', 'bond', 'mutual fund', 'tax', 'wealth', 'rich', 'poor', 'afford', 'cost', 'price', 'dollar', 'euro', 'yen']
+        finance_keywords = ['sell','buy', 'money', 'finance', 'financial', 'invest', 'investment', 'stock', 'stocks', 'crypto', 'cryptocurrency', 'bitcoin', 'save', 'savings', 'budget', 'expense', 'debt', 'loan', 'credit', 'bank', 'portfolio', 'retirement', '401k', 'ira', 'dividend', 'etf', 'bond', 'mutual fund', 'tax', 'wealth', 'rich', 'poor', 'afford', 'cost', 'price', 'dollar', 'euro', 'yen']
         is_finance_query = any(keyword in user_input.lower() for keyword in finance_keywords)
 
         # Check if user is asking about what they last ate
