@@ -91,23 +91,23 @@
 ### Overview
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         FRONTEND (CRT UI)                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
-│  │ index.html   │  │  script.js   │  │    style.css         │  │
-│  │ • Login      │  │ • State mgmt │  │ • CRT effects        │  │
-│  │ • Chat UI    │  │ • ESP32 sync │  │ • Animations         │  │
-│  │ • Upload     │  │ • Health bar │  │ • Scanlines/glow     │  │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘  │
+│                         FRONTEND (CRT UI)                       │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
+│  │ index.html   │  │  script.js   │  │    style.css         │   │
+│  │ • Login      │  │ • State mgmt │  │ • CRT effects        │   │
+│  │ • Chat UI    │  │ • ESP32 sync │  │ • Animations         │   │
+│  │ • Upload     │  │ • Health bar │  │ • Scanlines/glow     │   │
+│  └──────────────┘  └──────────────┘  └──────────────────────┘   │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ HTTP/REST API
 ┌──────────────────────────▼──────────────────────────────────────┐
-│                      BACKEND (Flask API)                         │
+│                      BACKEND (Flask API)                        │
 │  ┌────────────────────────────────────────────────────────────┐ │
-│  │ app.py - Main Flask Application                           │ │
-│  │ • /api/login      → User auth & greeting generation       │ │
-│  │ • /api/gemini     → LLM chat with RAG context             │ │
-│  │ • /api/feed       → Food classification & health update   │ │
-│  │ • /api/esp32      → UDP emotion state transmission        │ │
+│  │ app.py - Main Flask Application                            │ │
+│  │ • /api/login      → User auth & greeting generation        │ │
+│  │ • /api/gemini     → LLM chat with RAG context              │ │
+│  │ • /api/feed       → Food classification & health update    │ │
+│  │ • /api/esp32      → UDP emotion state transmission         │ │
 │  └────────────────────────────────────────────────────────────┘ │
 │  ┌──────────────────┐  ┌──────────────────────────────────────┐ │
 │  │ food_classifier  │  │       database.py (ORM)              │ │
